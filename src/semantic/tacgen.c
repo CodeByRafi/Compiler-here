@@ -27,7 +27,7 @@ char* new_temp(int *temp_count) {
 
 char* new_label(int *label_count) {
     char *label = (char*)malloc(20);
-    sprintf(label, "L%d", label_count++);
+    sprintf(label, "L%d", (*label_count)++);
     return label;
 }
 
@@ -73,10 +73,13 @@ static TACOperand operand_label(const char *name) {
     return op;
 }
 
-/* Convert AST operand to TAC operand */
 static TACOperand ast_node_to_operand(ASTNode *node) {
     if (node == NULL) {
         return operand_var("error");
+    }
+    
+    if (node->tac_place != NULL) {
+        return operand_var(node->tac_place);
     }
     
     if (node->node_type == NODE_CONST) {
@@ -194,7 +197,12 @@ TACInstr* generate_tac_node(ASTNode *node, int *temp_count, TACInstr **last) {
             /* Create binop instruction */
             TACInstr *binop = create_tac_instr();
             binop->op = TAC_BINOP;
-            binop->result = operand_var(new_temp(temp_count));
+            
+            char *temp_res = new_temp(temp_count);
+            node->tac_place = (char*)malloc(strlen(temp_res) + 1);
+            strcpy(node->tac_place, temp_res);
+            
+            binop->result = operand_var(temp_res);
             binop->operand1 = ast_node_to_operand(node->data.binop.left);
             binop->operand2 = ast_node_to_operand(node->data.binop.right);
             binop->binary_op = node->data.binop.op;
@@ -227,7 +235,12 @@ TACInstr* generate_tac_node(ASTNode *node, int *temp_count, TACInstr **last) {
             /* Create unop instruction */
             TACInstr *unop = create_tac_instr();
             unop->op = TAC_UNOP;
-            unop->result = operand_var(new_temp(temp_count));
+            
+            char *temp_res = new_temp(temp_count);
+            node->tac_place = (char*)malloc(strlen(temp_res) + 1);
+            strcpy(node->tac_place, temp_res);
+            
+            unop->result = operand_var(temp_res);
             unop->operand1 = ast_node_to_operand(node->data.unop.operand);
             unop->binary_op = node->data.unop.op;
             

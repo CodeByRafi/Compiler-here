@@ -156,6 +156,8 @@ DataType analyze_node(ASTNode *node, SymbolTable *symtab) {
         return VOID_TYPE;
     }
     
+    DataType result_type = VOID_TYPE;
+    
     switch (node->node_type) {
         case NODE_VAR_DECL: {
             /* Variable declaration: register in symbol table */
@@ -164,7 +166,8 @@ DataType analyze_node(ASTNode *node, SymbolTable *symtab) {
                               node->data.var_decl.var_name,
                               node->data.var_decl.type,
                               line);
-            return node->data.var_decl.type;
+            result_type = node->data.var_decl.type;
+            break;
         }
         
         case NODE_ASSIGNMENT: {
@@ -174,33 +177,35 @@ DataType analyze_node(ASTNode *node, SymbolTable *symtab) {
                 fprintf(stderr, "Semantic Error: Undeclared variable '%s'\n",
                         node->data.assignment.var_name);
                 semantic_errors++;
-                return VOID_TYPE;
+            } else {
+                /* Check: assigned value's type must match variable's type */
+                DataType rhs_type = analyze_node(node->data.assignment.value, symtab);
+                if (!check_assignment_type(sym->type, rhs_type)) {
+                    fprintf(stderr, "Semantic Error: Type mismatch in assignment to '%s'\n",
+                            node->data.assignment.var_name);
+                    semantic_errors++;
+                }
+                
+                node->expr_type = sym->type;
+                result_type = sym->type;
             }
-            
-            /* Check: assigned value's type must match variable's type */
-            DataType rhs_type = analyze_node(node->data.assignment.value, symtab);
-            if (!check_assignment_type(sym->type, rhs_type)) {
-                fprintf(stderr, "Semantic Error: Type mismatch in assignment to '%s'\n",
-                        node->data.assignment.var_name);
-                semantic_errors++;
-                return VOID_TYPE;
-            }
-            
-            node->expr_type = sym->type;
-            return sym->type;
+            break;
         }
         
         case NODE_BINOP: {
-            return check_binop_types(node, symtab);
+            result_type = check_binop_types(node, symtab);
+            break;
         }
         
         case NODE_UNOP: {
-            return check_unop_types(node, symtab);
+            result_type = check_unop_types(node, symtab);
+            break;
         }
         
         case NODE_CONST: {
             /* Constants are always valid; type is already set */
-            return node->data.constant.type;
+            result_type = node->data.constant.type;
+            break;
         }
         
         case NODE_VAR_REF: {
@@ -210,11 +215,11 @@ DataType analyze_node(ASTNode *node, SymbolTable *symtab) {
                 fprintf(stderr, "Semantic Error: Undeclared variable '%s'\n",
                         node->data.var_ref.var_name);
                 semantic_errors++;
-                return VOID_TYPE;
+            } else {
+                node->expr_type = sym->type;
+                result_type = sym->type;
             }
-            
-            node->expr_type = sym->type;
-            return sym->type;
+            break;
         }
         
         case NODE_IF: {
@@ -229,7 +234,8 @@ DataType analyze_node(ASTNode *node, SymbolTable *symtab) {
             analyze_node(node->data.if_stmt.then_stmt, symtab);
             analyze_node(node->data.if_stmt.else_stmt, symtab);
             
-            return VOID_TYPE;
+            result_type = VOID_TYPE;
+            break;
         }
         
         case NODE_WHILE: {
@@ -243,13 +249,15 @@ DataType analyze_node(ASTNode *node, SymbolTable *symtab) {
             /* Analyze loop body */
             analyze_node(node->data.while_stmt.body, symtab);
             
-            return VOID_TYPE;
+            result_type = VOID_TYPE;
+            break;
         }
         
         case NODE_PRINT: {
             /* Print can accept any type */
             analyze_node(node->data.print_stmt.expression, symtab);
-            return VOID_TYPE;
+            result_type = VOID_TYPE;
+            break;
         }
         
         case NODE_BLOCK: {
@@ -262,7 +270,8 @@ DataType analyze_node(ASTNode *node, SymbolTable *symtab) {
             /* Pop scope when exiting block */
             pop_scope(symtab);
             
-            return VOID_TYPE;
+            result_type = VOID_TYPE;
+            break;
         }
         
         default:
@@ -274,7 +283,7 @@ DataType analyze_node(ASTNode *node, SymbolTable *symtab) {
         analyze_node(node->next, symtab);
     }
     
-    return VOID_TYPE;
+    return result_type;
 }
 
 /* ============ MAIN SEMANTIC ANALYSIS ============ */

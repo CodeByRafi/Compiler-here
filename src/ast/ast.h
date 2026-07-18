@@ -55,6 +55,7 @@ typedef struct ASTNode {
     /* Type annotation (filled by semantic analyzer) */
     DataType expr_type;
     int is_lvalue;  /* Can this node be assigned to? */
+    char *tac_place; /* Where the result is stored in TAC */
     
     /* Node-specific data */
     union {

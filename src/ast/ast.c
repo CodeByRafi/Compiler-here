@@ -17,6 +17,7 @@ static ASTNode* create_node(NodeType type) {
     node->line_number = 0;
     node->expr_type = VOID_TYPE;
     node->is_lvalue = 0;
+    node->tac_place = NULL;
     return node;
 }
 
