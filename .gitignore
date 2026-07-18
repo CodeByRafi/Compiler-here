@@ -1,0 +1,16 @@
+# Object files
+*.o
+
+# Executable
+compiler
+compiler.exe
+
+# Bison/Flex generated files
+src/lexer/lex.yy.c
+src/parser/parser.tab.c
+src/parser/parser.tab.h
+src/parser/parser.output
+
+# VS Code / OS files
+.vscode/
+.DS_Store
