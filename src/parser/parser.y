@@ -18,6 +18,9 @@
 #include "../ast/ast.h"
 #include "../semantic/semantic.h"
 
+/* Declare strdup to avoid implicit declaration warning and pointer truncation on 64-bit Windows */
+char *strdup(const char *s);
+
 /* Forward declaration of lexer function */
 extern int yylex(void);
 
