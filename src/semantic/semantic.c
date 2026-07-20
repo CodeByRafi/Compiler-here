@@ -78,15 +78,20 @@ DataType check_binop_types(ASTNode *node, SymbolTable *symtab) {
     }
     
     /* Relational operators: need numeric operands, return bool */
+    /* For == and !=, also allow bool comparisons (e.g. flag == true) */
     if (op == LT_OP || op == GT_OP || op == LE_OP || op == GE_OP ||
         op == EQ_OP || op == NEQ_OP) {
         
-        if (!is_valid_relational_operand(left_type)) {
+        int eq_op = (op == EQ_OP || op == NEQ_OP);
+        int left_ok  = is_valid_relational_operand(left_type)  || (eq_op && left_type  == BOOL_TYPE);
+        int right_ok = is_valid_relational_operand(right_type) || (eq_op && right_type == BOOL_TYPE);
+
+        if (!left_ok) {
             fprintf(stderr, "Semantic Error: Invalid operand type for relational operator\n");
             semantic_errors++;
             return VOID_TYPE;
         }
-        if (!is_valid_relational_operand(right_type)) {
+        if (!right_ok) {
             fprintf(stderr, "Semantic Error: Invalid operand type for relational operator\n");
             semantic_errors++;
             return VOID_TYPE;
